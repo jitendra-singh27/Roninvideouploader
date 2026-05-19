@@ -21,7 +21,9 @@ import {
   Globe,
   LogOut,
   Lock,
-  User
+  User,
+  FileText,
+  Download
 } from 'lucide-react';
 import { PLATFORMS, getApiKeys, saveApiKeys, getPlatformConfig, getCorsProxy, saveCorsProxy } from './services/config';
 import { uploadFromUrl, getUploadStatus, getAllVideos, deleteVideo, renameVideo } from './services/api';
@@ -57,6 +59,107 @@ export default function App() {
   // Modals
   const [renameModal, setRenameModal] = useState({ isOpen: false, videoId: '', currentName: '', newName: '', platformId: null });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, videoId: '', videoName: '', platformId: null });
+
+  // Multi-select State
+  const [selectedVideos, setSelectedVideos] = useState([]);
+
+  // Auto-clear selection on tab or platform switch
+  useEffect(() => {
+    setSelectedVideos([]);
+  }, [activeTab, selectedPlatformForVideos]);
+
+  // Selection Helper Handlers
+  const isVideoSelected = (videoId, platformId) => {
+    return selectedVideos.some(v => v.id === videoId && v.platformId === platformId);
+  };
+
+  const toggleVideoSelection = (video, platformId) => {
+    setSelectedVideos(prev => {
+      const isSelected = prev.some(v => v.id === video.id && v.platformId === platformId);
+      if (isSelected) {
+        return prev.filter(v => !(v.id === video.id && v.platformId === platformId));
+      } else {
+        return [...prev, { id: video.id, name: video.name || 'Untitled Video', platformId }];
+      }
+    });
+  };
+
+  const toggleAllPageVideos = (pageVideos, platformId) => {
+    const allSelected = pageVideos.length > 0 && pageVideos.every(v => isVideoSelected(v.id, platformId));
+    if (allSelected) {
+      setSelectedVideos(prev => prev.filter(sv =>
+        !(sv.platformId === platformId && pageVideos.some(pv => pv.id === sv.id))
+      ));
+    } else {
+      setSelectedVideos(prev => {
+        const newSelections = pageVideos
+          .filter(pv => !prev.some(sv => sv.id === pv.id && sv.platformId === platformId))
+          .map(pv => ({ id: pv.id, name: pv.name || 'Untitled Video', platformId }));
+        return [...prev, ...newSelections];
+      });
+    }
+  };
+
+  const toggleAllSearchVideos = (searchVideos) => {
+    const allSelected = searchVideos.length > 0 && searchVideos.every(v => isVideoSelected(v.id, v.platformId));
+    if (allSelected) {
+      setSelectedVideos(prev => prev.filter(sv =>
+        !searchVideos.some(pv => pv.id === sv.id && pv.platformId === sv.platformId)
+      ));
+    } else {
+      setSelectedVideos(prev => {
+        const newSelections = searchVideos
+          .filter(pv => !prev.some(sv => sv.id === pv.id && sv.platformId === pv.platformId))
+          .map(pv => ({ id: pv.id, name: pv.name || 'Untitled Video', platformId: pv.platformId }));
+        return [...prev, ...newSelections];
+      });
+    }
+  };
+
+  const getSelectedUrls = (type = 'watch') => {
+    return selectedVideos.map(sv => {
+      const platform = PLATFORMS[sv.platformId];
+      if (!platform) return '';
+      const watchUrl = `${platform.playerUrl}/#${sv.id}`;
+      return type === 'download' ? `${watchUrl}&dl=1` : watchUrl;
+    }).filter(Boolean);
+  };
+
+  const copySelectedWatchLinks = () => {
+    if (selectedVideos.length === 0) return;
+    const urls = getSelectedUrls('watch').join('\n');
+    navigator.clipboard.writeText(urls);
+    showAlert(`Copied ${selectedVideos.length} watch links!`, 'success');
+  };
+
+  const copySelectedDownloadLinks = () => {
+    if (selectedVideos.length === 0) return;
+    const urls = getSelectedUrls('download').join('\n');
+    navigator.clipboard.writeText(urls);
+    showAlert(`Copied ${selectedVideos.length} download links!`, 'success');
+  };
+
+  const exportSelectedToTxt = () => {
+    if (selectedVideos.length === 0) return;
+    const lines = selectedVideos.map(sv => {
+      const platform = PLATFORMS[sv.platformId];
+      if (!platform) return '';
+      const watchUrl = `${platform.playerUrl}/#${sv.id}`;
+      const downloadUrl = `${watchUrl}&dl=1`;
+      return `Name: ${sv.name || 'Untitled Video'}\nPlatform: ${platform.name}\nWatch Link: ${watchUrl}\nDownload Link: ${downloadUrl}\n----------------------------------------`;
+    }).filter(Boolean).join('\n\n');
+
+    const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ronin_videos_export_${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showAlert(`Exported ${selectedVideos.length} videos to TXT!`, 'success');
+  };
 
   // Custom Alert Handler
   const showAlert = (message, type = 'success') => {
@@ -826,6 +929,14 @@ export default function App() {
                         <table className="premium-table">
                           <thead>
                             <tr>
+                              <th style={{ width: '40px', textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={paginatedVideos.length > 0 && paginatedVideos.every(v => isVideoSelected(v.id, selectedPlatformForVideos))}
+                                  onChange={() => toggleAllPageVideos(paginatedVideos, selectedPlatformForVideos)}
+                                  className="checkbox-control"
+                                />
+                              </th>
                               <th>Video Details</th>
                               <th className="hidden-mobile">Video ID</th>
                               <th>Actions</th>
@@ -835,9 +946,18 @@ export default function App() {
                             {paginatedVideos.map(video => {
                               const streamUrl = `${PLATFORMS[selectedPlatformForVideos].playerUrl}/#${video.id}`;
                               const downloadUrl = `${streamUrl}&dl=1`;
+                              const isSel = isVideoSelected(video.id, selectedPlatformForVideos);
 
                               return (
-                                <tr key={video.id}>
+                                <tr key={video.id} className={isSel ? 'row-selected' : ''}>
+                                  <td style={{ textAlign: 'center' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isSel}
+                                      onChange={() => toggleVideoSelection(video, selectedPlatformForVideos)}
+                                      className="checkbox-control"
+                                    />
+                                  </td>
                                   <td>
                                     <div className="table-video-details">
                                       <span className="table-video-name" title={video.name}>
@@ -988,6 +1108,14 @@ export default function App() {
                     <table className="premium-table">
                       <thead>
                         <tr>
+                          <th style={{ width: '40px', textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={unifiedSearchResults.length > 0 && unifiedSearchResults.every(v => isVideoSelected(v.id, v.platformId))}
+                              onChange={() => toggleAllSearchVideos(unifiedSearchResults)}
+                              className="checkbox-control"
+                            />
+                          </th>
                           <th>Video Info</th>
                           <th>Platform</th>
                           <th>Actions</th>
@@ -997,9 +1125,18 @@ export default function App() {
                         {unifiedSearchResults.map(video => {
                           const streamUrl = `${video.playerUrl}/#${video.id}`;
                           const downloadUrl = `${streamUrl}&dl=1`;
+                          const isSel = isVideoSelected(video.id, video.platformId);
 
                           return (
-                            <tr key={`${video.platformId}_${video.id}`}>
+                            <tr key={`${video.platformId}_${video.id}`} className={isSel ? 'row-selected' : ''}>
+                              <td style={{ textAlign: 'center' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSel}
+                                  onChange={() => toggleVideoSelection(video, video.platformId)}
+                                  className="checkbox-control"
+                                />
+                              </td>
                               <td>
                                 <div className="table-video-details">
                                   <span className="table-video-name" title={video.name}>
@@ -1262,6 +1399,51 @@ export default function App() {
                 Delete Permanently
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK ACTIONS FLOATING BAR */}
+      {selectedVideos.length > 0 && (
+        <div className="bulk-actions-floating-bar glass-container">
+          <div className="bulk-selection-info">
+            <span className="bulk-selection-count">
+              <strong>{selectedVideos.length}</strong> selected
+            </span>
+          </div>
+          <div className="bulk-action-buttons">
+            <button
+              onClick={copySelectedWatchLinks}
+              className="btn btn-secondary btn-sm btn-bulk"
+              title="Copy all Watch URLs"
+            >
+              <Copy className="btn-icon-sm" />
+              <span>Copy Watch Links</span>
+            </button>
+            <button
+              onClick={copySelectedDownloadLinks}
+              className="btn btn-secondary btn-sm btn-bulk"
+              title="Copy all Download URLs"
+            >
+              <Download className="btn-icon-sm" />
+              <span>Copy Download Links</span>
+            </button>
+            <button
+              onClick={exportSelectedToTxt}
+              className="btn btn-primary btn-sm btn-bulk"
+              title="Export selected URLs to a TXT file"
+            >
+              <FileText className="btn-icon-sm" />
+              <span>Export TXT</span>
+            </button>
+            <button
+              onClick={() => setSelectedVideos([])}
+              className="btn btn-secondary btn-sm btn-bulk btn-bulk-cancel"
+              title="Clear Selection"
+            >
+              <Trash2 className="btn-icon-sm" />
+              <span>Cancel</span>
+            </button>
           </div>
         </div>
       )}

@@ -1608,3 +1608,160 @@ body {
   color: #ef4444;
 }
 
+/* Checkbox Styling */
+.checkbox-control {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.6);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-control:checked {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.checkbox-control:checked::after {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-0.5px, -1px);
+}
+
+.checkbox-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary-glow));
+}
+
+.row-selected td {
+  background-color: hsl(var(--primary) / 0.04) !important;
+}
+
+/* Bulk Actions Floating Bar */
+.bulk-actions-floating-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 20px hsl(var(--primary-glow) / 0.2);
+  animation: slide-up-bar 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-width: 90vw;
+  width: auto;
+}
+
+@keyframes slide-up-bar {
+  from {
+    transform: translate(-50%, 40px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.bulk-selection-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: hsl(var(--text-main));
+}
+
+.bulk-selection-count strong {
+  color: hsl(var(--primary));
+  font-size: 1rem;
+}
+
+.bulk-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-bulk {
+  padding: 8px 14px !important;
+  font-size: 0.78rem !important;
+  border-radius: 8px !important;
+}
+
+.btn-bulk-cancel {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: hsl(var(--text-muted)) !important;
+}
+
+.btn-bulk-cancel:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+/* Mobile responsive for bulk floating bar */
+@media (max-width: 768px) {
+  .bulk-actions-floating-bar {
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100vw;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    align-items: stretch;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  @keyframes slide-up-bar {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .bulk-selection-info {
+    justify-content: center;
+  }
+  
+  .bulk-action-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .btn-bulk span {
+    display: inline !important;
+  }
+}
+
+
