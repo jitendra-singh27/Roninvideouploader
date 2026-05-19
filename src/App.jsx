@@ -1134,7 +1134,7 @@ export default function App() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => setProxyUrl("https://thingproxy.freeboard.io/fetch/")}
+                        onClick={() => setProxyUrl("")}
                         className="reset-btn"
                       >
                         Reset to default

@@ -53,8 +53,20 @@ export const getPlatformConfig = (platformId) => {
 };
 
 export const getCorsProxy = () => {
-  // Free public CORS proxy
-  return localStorage.getItem("uploader_cors_proxy") || "https://corsproxy.io/?";
+  const saved = localStorage.getItem("uploader_cors_proxy");
+  if (saved) return saved;
+
+  // Auto-detect production environment (Cloudflare Pages)
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1"
+  ) {
+    return "/api/cors?url=";
+  }
+
+  // Fallback for local development
+  return "https://corsproxy.io/?";
 };
 
 export const saveCorsProxy = (proxyUrl) => {
