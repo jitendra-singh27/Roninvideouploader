@@ -14,17 +14,17 @@ const getHeaders = (apiKey) => {
 const buildUrl = (baseUrl, path, params = {}) => {
   let fullUrl = `${baseUrl}${path}`;
   const queryParts = [];
-
+  
   Object.entries(params).forEach(([key, val]) => {
     if (val !== undefined && val !== null && val !== "") {
       queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
     }
   });
-
+  
   if (queryParts.length > 0) {
     fullUrl += `?${queryParts.join("&")}`;
   }
-
+  
   return fullUrl;
 };
 
@@ -32,12 +32,12 @@ const getRequestUrl = (targetUrl) => {
   const proxy = getCorsProxy();
   if (proxy && proxy.trim() !== "") {
     let cleanProxy = proxy.trim();
-
+    
     // Check if the proxy URL already ends with a query indicator (? or =)
     if (cleanProxy.endsWith("?") || cleanProxy.endsWith("=")) {
       return `${cleanProxy}${targetUrl}`;
     }
-
+    
     // Otherwise, ensure it ends with a slash for slash-based proxies
     if (!cleanProxy.endsWith("/")) {
       cleanProxy += "/";
@@ -93,7 +93,7 @@ export const getAllVideos = async (platformId, search = "") => {
 
   try {
     const params = {
-      per_page: 500
+      per_page: 100
     };
     if (search.trim()) {
       params.title = search.trim();
