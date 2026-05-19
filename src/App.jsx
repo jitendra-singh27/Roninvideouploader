@@ -47,7 +47,7 @@ export default function App() {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [videoSearchQuery, setVideoSearchQuery] = useState('');
   const [videoPage, setVideoPage] = useState(1);
-  const VIDEOS_PER_PAGE = 10;
+  const [videosPerPage, setVideosPerPage] = useState(20);
 
   // Unified Search State
   const [unifiedSearchQuery, setUnifiedSearchQuery] = useState('');
@@ -379,10 +379,10 @@ export default function App() {
     v.name?.toLowerCase().includes(videoSearchQuery.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE) || 1;
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage) || 1;
   const paginatedVideos = filteredVideos.slice(
-    (videoPage - 1) * VIDEOS_PER_PAGE,
-    videoPage * VIDEOS_PER_PAGE
+    (videoPage - 1) * videosPerPage,
+    videoPage * videosPerPage
   );
 
   if (!isLoggedIn) {
@@ -800,6 +800,20 @@ export default function App() {
                       />
                     </div>
 
+                    <div className="page-size-wrapper">
+                      <select
+                        value={videosPerPage}
+                        onChange={(e) => { setVideosPerPage(Number(e.target.value)); setVideoPage(1); }}
+                        className="form-input page-size-select"
+                        title="Videos per page"
+                      >
+                        <option value={10}>10 per page</option>
+                        <option value={20}>20 per page</option>
+                        <option value={50}>50 per page</option>
+                        <option value={100}>100 per page</option>
+                      </select>
+                    </div>
+
                     <button
                       onClick={() => fetchVideos(selectedPlatformForVideos, true, videoSearchQuery)}
                       disabled={loadingVideos}
@@ -908,7 +922,7 @@ export default function App() {
                       {totalPages > 1 && (
                         <div className="pagination-bar">
                           <span className="pagination-info">
-                            Showing {(videoPage - 1) * VIDEOS_PER_PAGE + 1} - {Math.min(videoPage * VIDEOS_PER_PAGE, filteredVideos.length)} of {filteredVideos.length} videos
+                            Showing {(videoPage - 1) * videosPerPage + 1} - {Math.min(videoPage * videosPerPage, filteredVideos.length)} of {filteredVideos.length} videos
                           </span>
 
                           <div className="pagination-buttons">
