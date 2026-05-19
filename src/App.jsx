@@ -335,16 +335,38 @@ export default function App() {
 
         if (statusData.status === 'completed') {
           const videoId = statusData.video?.id;
+          const originalName = statusData.video?.title || statusData.video?.name || '';
+          let finalName = originalName;
+
+          if (videoId && originalName) {
+            // Check if it already has "RoninXstream" suffix
+            if (!originalName.toLowerCase().includes("roninxstream")) {
+              const lastDotIndex = originalName.lastIndexOf('.');
+              if (lastDotIndex === -1) {
+                finalName = `${originalName} RoninXstream`;
+              } else {
+                finalName = `${originalName.substring(0, lastDotIndex)} RoninXstream${originalName.substring(lastDotIndex)}`;
+              }
+
+              try {
+                await renameVideo(videoId, finalName, platformId);
+                console.log(`Auto-renamed uploaded video ${videoId} to: ${finalName}`);
+              } catch (renameErr) {
+                console.error(`Failed to auto-rename video ${videoId}:`, renameErr);
+              }
+            }
+          }
+
           const videoLink = videoId ? `${platform.playerUrl}/#${videoId}` : '';
           const downloadLink = videoId ? `${platform.playerUrl}/#${videoId}&dl=1` : '';
 
           setUploadQueue(prev => prev.map(t =>
             t.id === queueTaskId
-              ? { ...t, status: 'completed', videoLink, downloadLink }
+              ? { ...t, status: 'completed', videoLink, downloadLink, videoName: finalName }
               : t
           ));
           isDone = true;
-          showAlert(`Upload completed on ${platform.name}!`, "success");
+          showAlert(`Upload completed and auto-renamed on ${platform.name}!`, "success");
 
           fetchVideos(platformId, false);
         } else if (statusData.status === 'failed') {
@@ -794,6 +816,12 @@ export default function App() {
                         <div className="queue-url">
                           {task.url}
                         </div>
+
+                        {task.videoName && (
+                          <div className="queue-renamed-info" style={{ marginTop: '8px', fontSize: '0.78rem', color: '#fff', wordBreak: 'break-all' }}>
+                            Renamed File: <strong style={{ color: 'hsl(var(--primary))' }}>{task.videoName}</strong>
+                          </div>
+                        )}
 
                         {task.taskId && (
                           <div className="task-id-info">
