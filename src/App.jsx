@@ -47,7 +47,7 @@ export default function App() {
   const [loadingVideos, setLoadingVideos] = useState(false);
   const [videoSearchQuery, setVideoSearchQuery] = useState('');
   const [videoPage, setVideoPage] = useState(1);
-  const VIDEOS_PER_PAGE = 5;
+  const VIDEOS_PER_PAGE = 10;
 
   // Unified Search State
   const [unifiedSearchQuery, setUnifiedSearchQuery] = useState('');
